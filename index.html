@@ -1,0 +1,2100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReelLog — Service Session Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-base:#15171a;
+    --bg-surface:#1e2124;
+    --bg-surface-raised:#272b2e;
+    --bg-sunken:#101214;
+    --text-primary:#f1ede4;
+    --text-secondary:#9ba3a6;
+    --text-tertiary:#6b7276;
+    --accent-amber:#f2b705;
+    --accent-amber-dim:#8a6b06;
+    --accent-green:#5c8a63;
+    --accent-green-dim:#2e3f30;
+    --accent-rust:#c1440e;
+    --accent-rust-dim:#3f2419;
+    --border-hairline:#33383b;
+    --border-hairline-soft:#25282b;
+    --radius-sm:4px;
+    --radius-md:8px;
+    --font-display:'Barlow Condensed',sans-serif;
+    --font-body:'Inter',sans-serif;
+    --font-mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{
+    background:#0a0b0c;
+    font-family:var(--font-body);
+    color:var(--text-primary);
+    -webkit-font-smoothing:antialiased;
+  }
+  body{
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:32px 16px;
+  }
+  .rig{
+    display:flex;
+    gap:28px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .meta{
+    width:250px;
+    padding-top:8px;
+  }
+  .meta h1{
+    font-family:var(--font-display);
+    font-size:22px;
+    font-weight:600;
+    letter-spacing:.02em;
+    color:var(--text-primary);
+    margin-bottom:6px;
+  }
+  .meta p{
+    font-size:12.5px;
+    line-height:1.6;
+    color:var(--text-secondary);
+    margin-bottom:14px;
+  }
+  .meta .tag{
+    display:inline-block;
+    font-family:var(--font-mono);
+    font-size:10px;
+    letter-spacing:.08em;
+    color:var(--accent-amber);
+    border:1px solid var(--accent-amber-dim);
+    padding:3px 7px;
+    border-radius:3px;
+    margin-bottom:3px;
+    margin-right:6px;
+  }
+  .phone{
+    width:390px;
+    height:820px;
+    background:var(--bg-base);
+    border-radius:36px;
+    border:8px solid #060708;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.7), 0 0 0 1px #000;
+    overflow:hidden;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+  }
+  .notch{
+    position:absolute;
+    top:0;left:50%;transform:translateX(-50%);
+    width:120px;height:22px;
+    background:#060708;
+    border-radius:0 0 14px 14px;
+    z-index:50;
+  }
+  .statusbar{
+    height:44px;
+    flex-shrink:0;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    padding:0 20px 6px;
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-secondary);
+  }
+  .screen-stack{
+    position:relative;
+    flex:1;
+    overflow:hidden;
+  }
+  .screen{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    opacity:0;
+    transform:translateX(16px);
+    pointer-events:none;
+    transition:opacity .22s ease, transform .22s ease;
+  }
+  .screen.active{
+    opacity:1;
+    transform:translateX(0);
+    pointer-events:auto;
+  }
+  .screen-scroll{
+    flex:1;
+    overflow-y:auto;
+    padding:0 18px 18px;
+  }
+  .screen-scroll::-webkit-scrollbar{display:none;}
+
+  /* ---- top bar ---- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:6px 16px 14px;
+    flex-shrink:0;
+  }
+  .topbar .back{
+    font-family:var(--font-body);
+    font-size:14px;
+    font-weight:500;
+    color:var(--text-secondary);
+    display:flex;
+    align-items:center;
+    gap:4px;
+    cursor:pointer;
+    padding:6px 8px 6px 0;
+  }
+  .topbar .title{
+    font-family:var(--font-display);
+    font-size:17px;
+    font-weight:600;
+    letter-spacing:.01em;
+  }
+  .topbar .spacer{width:40px;}
+
+  /* ---- quick reference card ---- */
+  .breadcrumb{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:.06em;
+    color:var(--text-tertiary);
+    margin-bottom:2px;
+    text-transform:uppercase;
+  }
+  .machine-head{
+    font-family:var(--font-display);
+    font-size:28px;
+    font-weight:600;
+    line-height:1.08;
+    margin-bottom:2px;
+  }
+  .machine-sub{
+    font-size:13px;
+    color:var(--text-secondary);
+    margin-bottom:14px;
+  }
+  .status-row{
+    display:flex;
+    gap:8px;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+  }
+  .badge{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    padding:5px 9px;
+    border-radius:3px;
+    font-weight:600;
+  }
+  .badge.verified{
+    background:var(--accent-green-dim);
+    color:#a9d4ae;
+    border:1px solid #3d5c41;
+  }
+  .badge.shoptested{
+    background:#3a3418;
+    color:var(--accent-amber);
+    border:1px solid #5c531f;
+  }
+  .badge.neutral{
+    background:var(--bg-surface-raised);
+    color:var(--text-secondary);
+    border:1px solid var(--border-hairline);
+  }
+
+  .spec-plate{
+    background:var(--bg-surface);
+    border:1px solid var(--border-hairline);
+    border-radius:var(--radius-md);
+    padding:14px 16px;
+    margin-bottom:12px;
+  }
+  .spec-plate-label{
+    font-family:var(--font-mono);
+    font-size:10px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--text-tertiary);
+    margin-bottom:10px;
+  }
+  .spec-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .spec-cell{
+    background:var(--bg-sunken);
+    border:1px solid var(--border-hailine-soft, var(--border-hairline-soft));
+    border-radius:var(--radius-sm);
+    padding:10px 10px 8px;
+  }
+  .spec-cell .val{
+    font-family:var(--font-mono);
+    font-size:20px;
+    font-weight:600;
+    color:var(--accent-amber);
+    line-height:1.1;
+  }
+  .spec-cell .val .unit{
+    font-size:12px;
+    font-weight:500;
+    color:var(--text-secondary);
+    margin-left:2px;
+  }
+  .spec-cell .lbl{
+    font-size:10.5px;
+    color:var(--text-secondary);
+    margin-top:4px;
+    letter-spacing:.01em;
+  }
+
+  .note-block{
+    background:var(--bg-surface);
+    border:1px solid var(--border-hairline);
+    border-left:3px solid var(--accent-amber);
+    border-radius:var(--radius-sm);
+    padding:11px 13px;
+    margin-bottom:12px;
+    font-size:12.5px;
+    line-height:1.55;
+    color:var(--text-primary);
+  }
+  .note-block .note-title{
+    font-family:var(--font-mono);
+    font-size:10px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--accent-amber);
+    margin-bottom:5px;
+    display:block;
+  }
+  .note-block ul{
+    padding-left:16px;
+  }
+  .note-block li{margin-bottom:3px;}
+
+  .meta-line{
+    display:flex;
+    justify-content:space-between;
+    padding:9px 2px;
+    border-bottom:1px solid var(--border-hairline-soft);
+    font-size:12.5px;
+  }
+  .meta-line .k{color:var(--text-secondary);}
+  .meta-line .v{color:var(--text-primary);font-weight:500;}
+
+  /* ---- bottom CTA ---- */
+  .cta-dock{
+    flex-shrink:0;
+    padding:12px 18px calc(18px + env(safe-area-inset-bottom,0px));
+    background:linear-gradient(0deg, var(--bg-base) 60%, transparent);
+  }
+  .btn{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:100%;
+    padding:16px;
+    border-radius:10px;
+    border:none;
+    font-family:var(--font-body);
+    font-size:15.5px;
+    font-weight:700;
+    letter-spacing:.01em;
+    cursor:pointer;
+    transition:transform .08s ease, opacity .12s ease;
+  }
+  .btn:active{transform:scale(.97);}
+  .btn-primary{
+    background:var(--accent-amber);
+    color:#1a1500;
+  }
+  .btn-secondary{
+    background:var(--bg-surface-raised);
+    color:var(--text-primary);
+    border:1px solid var(--border-hairline);
+  }
+  .btn-ghost{
+    background:transparent;
+    color:var(--text-secondary);
+    font-weight:500;
+    padding:10px;
+  }
+  .btn-row{display:flex;gap:10px;}
+  .btn-row .btn{flex:1;}
+
+  /* ---- stepper ---- */
+  .stepper{
+    display:flex;
+    gap:5px;
+    padding:0 18px 14px;
+    flex-shrink:0;
+  }
+  .stepper .dash{
+    flex:1;
+    height:3px;
+    border-radius:2px;
+    background:var(--border-hairline);
+  }
+  .stepper .dash.done{background:var(--accent-amber);}
+  .stepper .dash.current{background:var(--accent-amber);opacity:.5;}
+
+  .section-label{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--text-tertiary);
+    margin:18px 0 10px;
+  }
+  .section-label:first-child{margin-top:2px;}
+
+  /* ---- selectable cards ---- */
+  .option-card{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--bg-surface);
+    border:1.5px solid var(--border-hairline);
+    border-radius:var(--radius-md);
+    padding:15px 15px;
+    margin-bottom:10px;
+    cursor:pointer;
+    transition:border-color .12s ease, background .12s ease;
+  }
+  .option-card.selected{
+    border-color:var(--accent-amber);
+    background:#241f0d;
+  }
+  .option-card .oc-title{
+    font-size:14.5px;
+    font-weight:600;
+    margin-bottom:2px;
+  }
+  .option-card .oc-sub{
+    font-size:11.5px;
+    color:var(--text-secondary);
+  }
+  .option-card .oc-check{
+    width:20px;height:20px;
+    border-radius:50%;
+    border:1.5px solid var(--border-hairline);
+    flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .option-card.selected .oc-check{
+    border-color:var(--accent-amber);
+    background:var(--accent-amber);
+  }
+  .option-card.selected .oc-check::after{
+    content:'';
+    width:7px;height:7px;
+    border-radius:50%;
+    background:#1a1500;
+  }
+
+  /* ---- form fields ---- */
+  .field-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--bg-surface);
+    border:1px solid var(--border-hairline);
+    border-radius:var(--radius-sm);
+    padding:12px 14px;
+    margin-bottom:9px;
+  }
+  .field-row.changed{
+    border-color:var(--accent-amber-dim);
+    background:#211d0c;
+  }
+  .field-row .f-label{
+    font-size:13px;
+    color:var(--text-secondary);
+  }
+  .field-row .f-prev{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    color:var(--text-tertiary);
+    margin-top:2px;
+  }
+  .field-control{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .stepper-btn{
+    width:30px;height:30px;
+    border-radius:6px;
+    background:var(--bg-surface-raised);
+    border:1px solid var(--border-hairline);
+    color:var(--text-primary);
+    font-size:16px;
+    font-weight:600;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    user-select:none;
+  }
+  .stepper-btn:active{background:var(--accent-amber-dim);}
+  .field-value{
+    font-family:var(--font-mono);
+    font-size:16px;
+    font-weight:600;
+    color:var(--accent-amber);
+    min-width:64px;
+    text-align:center;
+  }
+  .field-value .unit{
+    font-size:11px;
+    color:var(--text-secondary);
+    font-weight:500;
+  }
+
+  /* ---- result buttons ---- */
+  .result-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .result-btn{
+    flex:1;
+    padding:16px 8px;
+    border-radius:10px;
+    border:1.5px solid var(--border-hairline);
+    background:var(--bg-surface);
+    color:var(--text-secondary);
+    font-family:var(--font-body);
+    font-weight:700;
+    font-size:13.5px;
+    text-align:center;
+    cursor:pointer;
+  }
+  .result-btn.pass.active{
+    background:var(--accent-green-dim);
+    border-color:var(--accent-green);
+    color:#bfe4c4;
+  }
+  .result-btn.fail.active{
+    background:var(--accent-rust-dim);
+    border-color:var(--accent-rust);
+    color:#f2b39b;
+  }
+
+  .photo-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .photo-slot{
+    width:64px;height:64px;
+    border-radius:8px;
+    border:1.5px dashed var(--border-hairline);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--text-tertiary);
+    font-size:20px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .photo-slot.filled{
+    border-style:solid;
+    background:linear-gradient(135deg,#2a2f24,#1c2e1f);
+    color:var(--accent-green);
+    font-size:18px;
+  }
+
+  .voice-note{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--bg-surface);
+    border:1px solid var(--border-hairline);
+    border-radius:var(--radius-md);
+    padding:12px 14px;
+    margin-bottom:14px;
+    cursor:pointer;
+  }
+  .voice-note .mic{
+    width:34px;height:34px;
+    border-radius:50%;
+    background:var(--accent-amber-dim);
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+    font-size:15px;
+  }
+  .voice-note .vn-text{
+    font-size:12.5px;
+    color:var(--text-secondary);
+  }
+  .voice-note .vn-title{
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--text-primary);
+  }
+
+  textarea.notes-input{
+    width:100%;
+    background:var(--bg-surface);
+    border:1px solid var(--border-hairline);
+    border-radius:var(--radius-md);
+    padding:12px 14px;
+    color:var(--text-primary);
+    font-family:var(--font-body);
+    font-size:13px;
+    min-height:64px;
+    resize:none;
+    margin-bottom:14px;
+  }
+  textarea.notes-input::placeholder{color:var(--text-tertiary);}
+
+  .draft-pill{
+    position:absolute;
+    top:8px;right:18px;
+    font-family:var(--font-mono);
+    font-size:9.5px;
+    letter-spacing:.05em;
+    color:var(--text-tertiary);
+    display:flex;
+    align-items:center;
+    gap:5px;
+    z-index:5;
+  }
+  .draft-pill .dot{
+    width:6px;height:6px;
+    border-radius:50%;
+    background:var(--accent-green);
+  }
+
+  /* summary screen */
+  .summary-card{
+    background:var(--bg-surface);
+    border:1px solid var(--border-hairline);
+    border-radius:var(--radius-md);
+    overflow:hidden;
+    margin-bottom:14px;
+  }
+  .summary-card .sc-head{
+    padding:12px 14px;
+    background:var(--bg-surface-raised);
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--text-secondary);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .sc-edit{
+    font-family:var(--font-body);
+    font-size:11.5px;
+    letter-spacing:0;
+    text-transform:none;
+    color:var(--accent-amber);
+    font-weight:600;
+    cursor:pointer;
+    padding:2px 4px;
+  }
+  .summary-row{
+    display:flex;
+    justify-content:space-between;
+    padding:9px 14px;
+    border-bottom:1px solid var(--border-hairline-soft);
+    font-size:12.5px;
+  }
+  .summary-row:last-child{border-bottom:none;}
+  .summary-row .k{color:var(--text-secondary);}
+  .summary-row .v{
+    font-family:var(--font-mono);
+    font-weight:600;
+    color:var(--text-primary);
+  }
+  .summary-row .v.changed{color:var(--accent-amber);}
+
+  /* completion */
+  .complete-wrap{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:0 30px;
+    text-align:center;
+  }
+  .complete-icon{
+    width:64px;height:64px;
+    border-radius:50%;
+    background:var(--accent-green-dim);
+    border:2px solid var(--accent-green);
+    display:flex;align-items:center;justify-content:center;
+    font-size:30px;
+    color:#bfe4c4;
+    margin-bottom:18px;
+  }
+  .complete-wrap h2{
+    font-family:var(--font-display);
+    font-size:24px;
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .complete-wrap p{
+    font-size:13px;
+    color:var(--text-secondary);
+    line-height:1.6;
+    margin-bottom:26px;
+  }
+  .timer-note{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-tertiary);
+    margin-top:14px;
+  }
+
+  ::-webkit-scrollbar{width:0;height:0;}
+
+  /* ---- Phase 2: auth / org / CRUD ---- */
+  .tabbar{
+    display:flex;
+    flex-shrink:0;
+    border-top:1px solid var(--border-hairline);
+    background:var(--bg-base);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .tab-item{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+    padding:10px 0 8px;
+    color:var(--text-tertiary);
+    font-size:10.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .tab-item .tab-icon{font-size:18px;line-height:1;}
+  .tab-item.active{color:var(--accent-amber);}
+
+  .add-btn{
+    width:34px;height:34px;
+    border-radius:8px;
+    background:var(--bg-surface-raised);
+    border:1px solid var(--border-hairline);
+    color:var(--accent-amber);
+    font-size:19px;
+    font-weight:600;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+  }
+
+  .brand-block{
+    text-align:center;
+    padding:60px 0 40px;
+  }
+  .brand-block .brand-name{
+    font-family:var(--font-display);
+    font-size:34px;
+    font-weight:700;
+    letter-spacing:.01em;
+    color:var(--accent-amber);
+  }
+  .brand-block .brand-tag{
+    font-size:12.5px;
+    color:var(--text-secondary);
+    margin-top:6px;
+  }
+
+  .form-group{margin-bottom:14px;}
+  .form-label{
+    font-size:12px;
+    color:var(--text-secondary);
+    margin-bottom:6px;
+    display:block;
+    font-weight:500;
+  }
+  .text-input{
+    width:100%;
+    background:var(--bg-surface);
+    border:1px solid var(--border-hairline);
+    border-radius:var(--radius-sm);
+    padding:13px 14px;
+    color:var(--text-primary);
+    font-family:var(--font-body);
+    font-size:14.5px;
+  }
+  .text-input::placeholder{color:var(--text-tertiary);}
+  .text-input:focus{outline:none;border-color:var(--accent-amber-dim);}
+
+  .form-row-2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+
+  .toggle-pair{
+    display:flex;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .toggle-pair .option-card{
+    flex:1;
+    margin-bottom:0;
+    padding:12px;
+    justify-content:center;
+    text-align:center;
+  }
+  .toggle-pair .option-card .oc-title{margin-bottom:0;}
+
+  .list-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--bg-surface);
+    border:1px solid var(--border-hairline);
+    border-radius:var(--radius-md);
+    padding:13px 15px;
+    margin-bottom:9px;
+    cursor:pointer;
+  }
+  .list-row .lr-title{font-size:14px;font-weight:600;margin-bottom:2px;}
+  .list-row .lr-sub{font-size:11.5px;color:var(--text-secondary);}
+  .list-row .lr-chev{color:var(--text-tertiary);font-size:15px;}
+
+  .dashed-add{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    border:1.5px dashed var(--border-hairline);
+    border-radius:var(--radius-md);
+    padding:13px;
+    color:var(--accent-amber);
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    margin-bottom:9px;
+  }
+
+  .machine-meta-card{
+    background:var(--bg-surface);
+    border:1px solid var(--border-hairline);
+    border-radius:var(--radius-md);
+    padding:14px 16px;
+    margin-bottom:16px;
+  }
+  .machine-meta-card .mm-row{
+    display:flex;
+    justify-content:space-between;
+    padding:6px 0;
+    font-size:12.5px;
+    border-bottom:1px solid var(--border-hairline-soft);
+  }
+  .machine-meta-card .mm-row:last-child{border-bottom:none;}
+  .machine-meta-card .mm-row .k{color:var(--text-secondary);}
+  .machine-meta-card .mm-row .v{font-weight:500;}
+</style>
+</head>
+<body>
+
+<div class="rig">
+  <div class="meta">
+    <h1>ReelLog — Prototype</h1>
+    <p>Clickable walkthrough of the quick-reference card and Start Service Session flow. Tap through as a technician would on the shop floor.</p>
+    <div>
+      <span class="tag">MOBILE</span>
+      <span class="tag">DARK</span>
+      <span class="tag">DEMO DATA</span>
+    </div>
+  </div>
+
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="statusbar">
+      <span>9:41</span>
+      <span>SHOP WIFI · ●</span>
+    </div>
+
+    <div class="screen-stack" id="screenStack">
+
+      <!-- SCREEN: Login -->
+      <div class="screen active" data-screen="login">
+        <div class="screen-scroll">
+          <div class="brand-block">
+            <div class="brand-name">ReelLog</div>
+            <div class="brand-tag">Cutting-unit service intelligence</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input class="text-input" type="email" placeholder="you@courseemail.com" value="tech@fairwaysgc.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="text-input" type="password" placeholder="••••••••" value="••••••••">
+          </div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="nav('machinelist')">Log In</button>
+          <div style="text-align:center;margin-top:14px;">
+            <span class="btn-ghost" style="display:inline-block;cursor:pointer;" onclick="nav('orgsetup')">First time? Create an organization</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: Org Setup -->
+      <div class="screen" data-screen="orgsetup">
+        <div class="topbar">
+          <div class="back" onclick="nav('login')">‹ Back</div>
+          <div class="title">New Organization</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="form-group">
+            <label class="form-label">Organization name</label>
+            <input class="text-input" type="text" placeholder="e.g. Fairways Golf Club" value="Fairways Golf Club">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Primary location</label>
+            <input class="text-input" type="text" placeholder="City, State">
+          </div>
+          <div class="section-label">Preferred units</div>
+          <div class="toggle-pair">
+            <div class="option-card selected" onclick="selectType(this)">
+              <div class="oc-title">Imperial</div>
+            </div>
+            <div class="option-card" onclick="selectType(this)">
+              <div class="oc-title">Metric</div>
+            </div>
+          </div>
+          <div class="section-label">Your role</div>
+          <div class="option-card selected" onclick="selectType(this)">
+            <div class="oc-title">Admin (full access)</div>
+          </div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="nav('machinelist')">Create Organization &amp; Continue</button>
+        </div>
+      </div>
+
+      <!-- SCREEN 1: Quick Reference Card -->
+      <div class="screen" data-screen="quickref">
+        <div class="topbar">
+          <div class="back" onclick="nav('machinedetail')">‹ Cutting Units</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="breadcrumb">Position · Front Left</div>
+          <div class="machine-head">Reelmaster 3550-D</div>
+          <div class="machine-sub">Asset #GC-14 · 11-blade reel · Groomer, roller brush</div>
+
+          <div class="status-row">
+            <span class="badge verified">✓ Verified</span>
+            <span class="badge neutral">Last grind Jul 22</span>
+          </div>
+
+          <div class="spec-plate" onclick="openRecipe(1)" style="cursor:pointer;">
+            <div class="spec-plate-label" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>Grind Setup — Toro 3550-D / 11-blade</span>
+              <span style="color:var(--accent-amber);font-size:11px;">View full setup ›</span>
+            </div>
+            <div class="spec-grid">
+              <div class="spec-cell">
+                <div class="val">33<span class="unit">°</span></div>
+                <div class="lbl">Support bar</div>
+              </div>
+              <div class="spec-cell">
+                <div class="val">225<span class="unit">rpm</span></div>
+                <div class="lbl">Spin drive speed</div>
+              </div>
+              <div class="spec-cell">
+                <div class="val">10.5<span class="unit">ft/min</span></div>
+                <div class="lbl">Traverse speed</div>
+              </div>
+              <div class="spec-cell">
+                <div class="val">.850<span class="unit">"</span></div>
+                <div class="lbl">Spin wheel — 60g</div>
+              </div>
+              <div class="spec-cell">
+                <div class="val">.525<span class="unit">"</span></div>
+                <div class="lbl">Relief wheel — 46g</div>
+              </div>
+              <div class="spec-cell">
+                <div class="val">REV</div>
+                <div class="lbl">Drive side · reel-motor</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="spec-plate" onclick="nav('bedknifehistory')" style="cursor:pointer;">
+            <div class="spec-plate-label" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>Current Bedknife</span>
+              <span style="color:var(--accent-amber);font-size:11px;">History ›</span>
+            </div>
+            <div class="spec-grid">
+              <div class="spec-cell">
+                <div class="val" id="bk-partnum" style="font-size:15px;">—</div>
+                <div class="lbl">Part number</div>
+              </div>
+              <div class="spec-cell">
+                <div class="val" id="bk-cycles">—</div>
+                <div class="lbl">Grind cycles</div>
+              </div>
+            </div>
+            <div class="meta-line" style="border-bottom:none;padding-top:10px;">
+              <span class="k">Installed</span><span class="v" id="bk-installdate">—</span>
+            </div>
+          </div>
+
+          <div class="note-block">
+            <span class="note-title">Critical setup notes</span>
+            <ul>
+              <li>Remove rear roller brush and groomer before mounting.</li>
+              <li>Front-left / rear-left: move spin drive to reel-motor side, set to reverse.</li>
+              <li>Lower grinding stone to clear front roller.</li>
+            </ul>
+          </div>
+
+          <div class="section-label">History</div>
+          <div class="meta-line"><span class="k">Last technician</span><span class="v">M. Alvarez</span></div>
+          <div class="meta-line"><span class="k">Last grind date</span><span class="v">Jul 22, 2026</span></div>
+          <div class="meta-line"><span class="k">Machine hours</span><span class="v">1,204 hrs</span></div>
+          <div class="meta-line"><span class="k">Setup status</span><span class="v">Verified (3 uses)</span></div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="startSession()">Start Service Session</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: Bedknife History -->
+      <div class="screen" data-screen="bedknifehistory">
+        <div class="topbar">
+          <div class="back" onclick="nav('quickref')">‹ Cutting Unit</div>
+          <div class="title">Bedknife History</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="breadcrumb">Reelmaster 3550-D · Front Left</div>
+          <div class="machine-head" style="font-size:22px;margin-bottom:14px;">Bedknife Log</div>
+          <div id="bedknifeHistoryList"></div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="nav('replacebedknife')">Replace Bedknife</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: Replace Bedknife -->
+      <div class="screen" data-screen="replacebedknife">
+        <div class="topbar">
+          <div class="back" onclick="nav('bedknifehistory')">‹ Cancel</div>
+          <div class="title">Replace Bedknife</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="note-block">
+            <span class="note-title">Removing current bedknife</span>
+            The active bedknife will be marked removed today and added to history. Enter the new one below.
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Manufacturer</label>
+              <input class="text-input" id="bk-manufacturer" type="text" placeholder="Toro" value="Toro">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Part number</label>
+              <input class="text-input" id="bk-partnumber" type="text" placeholder="104-4009-03" value="104-4009-03">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Material</label>
+            <input class="text-input" id="bk-material" type="text" placeholder="High-carbon steel" value="High-carbon steel">
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Top-face angle</label>
+              <input class="text-input" id="bk-topface" type="text" placeholder="5°" value="5°">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Front-face angle</label>
+              <input class="text-input" id="bk-frontface" type="text" placeholder="6°" value="6°">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Minimum thickness</label>
+            <input class="text-input" id="bk-minthick" type="text" placeholder=".175 in" value=".175 in">
+          </div>
+          <div class="section-label">Condition</div>
+          <div class="toggle-pair">
+            <div class="option-card selected" onclick="selectType(this)" data-condition="New">
+              <div class="oc-title">New</div>
+            </div>
+            <div class="option-card" onclick="selectType(this)" data-condition="Reused">
+              <div class="oc-title">Reused</div>
+            </div>
+          </div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="saveBedknifeReplacement()">Save Replacement</button>
+        </div>
+      </div>
+
+      <!-- SCREEN 2: Service Type -->
+      <div class="screen" data-screen="type">
+        <div class="draft-pill"><span class="dot"></span>Draft saving</div>
+        <div class="topbar">
+          <div class="back" onclick="navBack('type','quickref')">‹ <span id="backLabel-type">Cancel</span></div>
+          <div class="title">New Session</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="stepper">
+          <div class="dash current"></div><div class="dash"></div><div class="dash"></div><div class="dash"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="breadcrumb">Reelmaster 3550-D · Front Left</div>
+          <div class="section-label">Service type</div>
+
+          <div class="option-card selected" onclick="selectType(this)">
+            <div>
+              <div class="oc-title">Spin &amp; relief grind</div>
+              <div class="oc-sub">Full setup applies — last used Jul 22</div>
+            </div>
+            <div class="oc-check"></div>
+          </div>
+          <div class="option-card" onclick="selectType(this)">
+            <div>
+              <div class="oc-title">Bedknife grind only</div>
+              <div class="oc-sub">Top-face / front-face angles</div>
+            </div>
+            <div class="oc-check"></div>
+          </div>
+          <div class="option-card" onclick="selectType(this)">
+            <div>
+              <div class="oc-title">Bedknife replacement</div>
+              <div class="oc-sub">New bedknife install</div>
+            </div>
+            <div class="oc-check"></div>
+          </div>
+          <div class="option-card" onclick="selectType(this)">
+            <div>
+              <div class="oc-title">Inspection only</div>
+              <div class="oc-sub">No grind performed</div>
+            </div>
+            <div class="oc-check"></div>
+          </div>
+
+          <div class="section-label">Reason</div>
+          <div class="option-card selected" onclick="selectType(this)">
+            <div><div class="oc-title">Scheduled maintenance</div></div>
+            <div class="oc-check"></div>
+          </div>
+          <div class="option-card" onclick="selectType(this)">
+            <div><div class="oc-title">Cut quality issue</div></div>
+            <div class="oc-check"></div>
+          </div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="navForward('type','adjust')">Continue</button>
+        </div>
+      </div>
+
+      <!-- SCREEN 3: Adjust settings -->
+      <div class="screen" data-screen="adjust">
+        <div class="draft-pill"><span class="dot"></span>Draft saving</div>
+        <div class="topbar">
+          <div class="back" onclick="navBack('adjust','type')">‹ <span id="backLabel-adjust">Back</span></div>
+          <div class="title">Settings Used</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="stepper">
+          <div class="dash done"></div><div class="dash current"></div><div class="dash"></div><div class="dash"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="note-block" style="border-left-color:var(--accent-green);">
+            <span class="note-title" style="color:var(--accent-green);">Loaded from verified setup</span>
+            Only fields you change are marked. Everything else carries over automatically.
+          </div>
+
+          <div class="section-label">Spin grind</div>
+
+          <div class="field-row">
+            <div>
+              <div class="f-label">Support bar angle</div>
+              <div class="f-prev">Setup: 33°</div>
+            </div>
+            <div class="field-control">
+              <div class="stepper-btn" onclick="adjustVal(this,-1)">–</div>
+              <div class="field-value">33<span class="unit">°</span></div>
+              <div class="stepper-btn" onclick="adjustVal(this,1)">+</div>
+            </div>
+          </div>
+
+          <div class="field-row changed">
+            <div>
+              <div class="f-label">Spin drive speed</div>
+              <div class="f-prev">Setup: 225 rpm</div>
+            </div>
+            <div class="field-control">
+              <div class="stepper-btn" onclick="adjustVal(this,-5)">–</div>
+              <div class="field-value">220<span class="unit">rpm</span></div>
+              <div class="stepper-btn" onclick="adjustVal(this,5)">+</div>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div>
+              <div class="f-label">Traverse speed</div>
+              <div class="f-prev">Setup: 10.5 ft/min</div>
+            </div>
+            <div class="field-control">
+              <div class="stepper-btn" onclick="adjustVal(this,-0.5)">–</div>
+              <div class="field-value">10.5<span class="unit">ft/m</span></div>
+              <div class="stepper-btn" onclick="adjustVal(this,0.5)">+</div>
+            </div>
+          </div>
+
+          <div class="section-label">Wheels</div>
+          <div class="field-row">
+            <div>
+              <div class="f-label">Spin wheel</div>
+              <div class="f-prev">Setup: .850" · 60 grit</div>
+            </div>
+            <div class="field-control">
+              <div class="field-value" style="min-width:auto;">.850" 60g</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div>
+              <div class="f-label">Relief wheel</div>
+              <div class="f-prev">Setup: .525" · 46 grit</div>
+            </div>
+            <div class="field-control">
+              <div class="field-value" style="min-width:auto;">.525" 46g</div>
+            </div>
+          </div>
+
+          <div class="section-label">Reel diameter</div>
+          <div class="field-row">
+            <div><div class="f-label">Before</div></div>
+            <div class="field-control">
+              <div class="stepper-btn" onclick="adjustVal(this,-0.01)">–</div>
+              <div class="field-value">5.00<span class="unit">"</span></div>
+              <div class="stepper-btn" onclick="adjustVal(this,0.01)">+</div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div><div class="f-label">After</div></div>
+            <div class="field-control">
+              <div class="stepper-btn" onclick="adjustVal(this,-0.01)">–</div>
+              <div class="field-value">4.98<span class="unit">"</span></div>
+              <div class="stepper-btn" onclick="adjustVal(this,0.01)">+</div>
+            </div>
+          </div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="navForward('adjust','results')">Continue</button>
+        </div>
+      </div>
+
+      <!-- SCREEN 4: Results -->
+      <div class="screen" data-screen="results">
+        <div class="draft-pill"><span class="dot"></span>Draft saving</div>
+        <div class="topbar">
+          <div class="back" onclick="navBack('results','adjust')">‹ <span id="backLabel-results">Back</span></div>
+          <div class="title">Results</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="stepper">
+          <div class="dash done"></div><div class="dash done"></div><div class="dash current"></div><div class="dash"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="section-label">Paper-cut test</div>
+          <div class="result-row">
+            <div class="result-btn pass active" onclick="pickResult(this)">✓ PASS</div>
+            <div class="result-btn fail" onclick="pickResult(this)">✕ FAIL</div>
+          </div>
+
+          <div class="section-label">Visual inspection</div>
+          <div class="result-row">
+            <div class="result-btn pass active" onclick="pickResult(this)">✓ GOOD</div>
+            <div class="result-btn fail" onclick="pickResult(this)">✕ ISSUE</div>
+          </div>
+
+          <div class="section-label">Photos</div>
+          <div class="photo-row">
+            <div class="photo-slot filled">✓</div>
+            <div class="photo-slot" onclick="this.classList.add('filled');this.textContent='✓'">+</div>
+            <div class="photo-slot" onclick="this.classList.add('filled');this.textContent='✓'">+</div>
+          </div>
+
+          <div class="section-label">Notes</div>
+          <div class="voice-note" onclick="this.querySelector('.vn-text').textContent='Recording… tap to stop'">
+            <div class="mic">🎙</div>
+            <div>
+              <div class="vn-title">Voice note</div>
+              <div class="vn-text">Tap to dictate</div>
+            </div>
+          </div>
+          <textarea class="notes-input" placeholder="Dropped speed 5 rpm — sound was slightly rough at 225 on this wheel.">Dropped speed 5 rpm — sound was slightly rough at 225 on this wheel.</textarea>
+
+          <div class="section-label">Follow-up</div>
+          <div class="option-card" onclick="this.classList.toggle('selected')">
+            <div>
+              <div class="oc-title">Flag for follow-up</div>
+              <div class="oc-sub">Notify equipment manager</div>
+            </div>
+            <div class="oc-check"></div>
+          </div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="nav('summary')">Review &amp; Complete</button>
+        </div>
+      </div>
+
+      <!-- SCREEN 5: Summary -->
+      <div class="screen" data-screen="summary">
+        <div class="topbar">
+          <div class="back" onclick="nav('results')">‹ Back</div>
+          <div class="title">Confirm Session</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="stepper">
+          <div class="dash done"></div><div class="dash done"></div><div class="dash done"></div><div class="dash current"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="summary-card">
+            <div class="sc-head">Session <span class="sc-edit" onclick="navFrom('type','summary')">Edit</span></div>
+            <div class="summary-row"><span class="k">Machine</span><span class="v">Reelmaster 3550-D</span></div>
+            <div class="summary-row"><span class="k">Position</span><span class="v">Front left</span></div>
+            <div class="summary-row"><span class="k">Type</span><span class="v">Spin &amp; relief grind</span></div>
+            <div class="summary-row"><span class="k">Technician</span><span class="v">You</span></div>
+          </div>
+
+          <div class="summary-card">
+            <div class="sc-head">Settings used <span class="sc-edit" onclick="navFrom('adjust','summary')">Edit</span></div>
+            <div class="summary-row"><span class="k">Support bar</span><span class="v">33°</span></div>
+            <div class="summary-row"><span class="k">Spin speed</span><span class="v changed">220 rpm ●</span></div>
+            <div class="summary-row"><span class="k">Traverse</span><span class="v">10.5 ft/min</span></div>
+            <div class="summary-row"><span class="k">Reel dia. before → after</span><span class="v">5.00" → 4.98"</span></div>
+          </div>
+
+          <div class="summary-card">
+            <div class="sc-head">Results <span class="sc-edit" onclick="navFrom('results','summary')">Edit</span></div>
+            <div class="summary-row"><span class="k">Paper-cut test</span><span class="v" style="color:var(--accent-green)">PASS</span></div>
+            <div class="summary-row"><span class="k">Visual inspection</span><span class="v" style="color:var(--accent-green)">GOOD</span></div>
+            <div class="summary-row"><span class="k">Photos attached</span><span class="v">1</span></div>
+          </div>
+
+          <div class="note-block">
+            <span class="note-title">Setup update</span>
+            Spin speed differs from the verified setup by 5 rpm. Save this as the new verified value, or keep it as a one-off for this session?
+          </div>
+          <div class="btn-row" style="margin-bottom:14px;">
+            <button class="btn btn-secondary" style="font-size:12.5px;padding:12px;">Keep setup as-is</button>
+            <button class="btn btn-secondary" style="font-size:12.5px;padding:12px;border-color:var(--accent-amber);color:var(--accent-amber);">Update setup</button>
+          </div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="nav('complete')">Save Session</button>
+        </div>
+      </div>
+
+      <!-- SCREEN 6: Complete -->
+      <div class="screen" data-screen="complete">
+        <div class="complete-wrap">
+          <div class="complete-icon">✓</div>
+          <h2>Session saved</h2>
+          <p>Front left, Reelmaster 3550-D, updated. History and quick-reference card now reflect this service.</p>
+          <button class="btn btn-primary" style="width:auto;padding:14px 28px;" onclick="nav('quickref')">Back to Quick Reference</button>
+          <div class="timer-note">Elapsed: 0:47</div>
+        </div>
+      </div>
+
+      <!-- SCREEN 0: Machine list (entry point) -->
+      <div class="screen" data-screen="machinelist">
+        <div class="topbar">
+          <div class="back" style="visibility:hidden;">‹</div>
+          <div class="title">Machines</div>
+          <div class="add-btn" onclick="nav('addmachine')">＋</div>
+        </div>
+        <div class="screen-scroll">
+          <div class="section-label">All machines</div>
+          <div id="machineListItems"></div>
+          <div class="dashed-add" onclick="nav('addmachine')">＋ Add Machine</div>
+          <div class="dashed-add" onclick="nav('machinelist')" style="opacity:.7;">⌗ Scan Machine QR</div>
+        </div>
+        <div class="tabbar">
+          <div class="tab-item active" onclick="nav('machinelist')">
+            <span class="tab-icon">⚙</span>Machines
+          </div>
+          <div class="tab-item" onclick="nav('recipelist')">
+            <span class="tab-icon">▤</span>Setups
+          </div>
+          <div class="tab-item" onclick="nav('grinderlist')">
+            <span class="tab-icon">◐</span>Grinders
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: Machine detail -->
+      <div class="screen" data-screen="machinedetail">
+        <div class="topbar">
+          <div class="back" onclick="nav('machinelist')">‹ Machines</div>
+          <div class="title" id="md-titlebar">Machine</div>
+          <div class="add-btn" onclick="nav('addmachine')" style="font-size:14px;">✎</div>
+        </div>
+        <div class="screen-scroll">
+          <div class="machine-head" style="font-size:24px;" id="md-head">—</div>
+          <div class="machine-sub" style="margin-bottom:14px;" id="md-sub">—</div>
+
+          <div class="machine-meta-card">
+            <div class="mm-row"><span class="k">Serial number</span><span class="v" id="md-serial">—</span></div>
+            <div class="mm-row"><span class="k">Year</span><span class="v" id="md-year">—</span></div>
+            <div class="mm-row"><span class="k">Machine hours</span><span class="v" id="md-hours">—</span></div>
+            <div class="mm-row"><span class="k">Status</span><span class="v" id="md-status" style="color:var(--accent-green);">—</span></div>
+          </div>
+
+          <div class="section-label">Cutting units</div>
+          <div id="cuttingUnitsList"></div>
+          <div class="dashed-add" style="opacity:.75;font-size:12px;" onclick="nav('addcuttingunit')">＋ Add another unit manually</div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-secondary" onclick="nav('machinelist')">Back to Machines</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: Add Machine -->
+      <div class="screen" data-screen="addmachine">
+        <div class="topbar">
+          <div class="back" onclick="nav('machinelist')">‹ Cancel</div>
+          <div class="title">Add Machine</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Manufacturer</label>
+              <input class="text-input" id="mf-manufacturer" type="text" placeholder="Toro" value="Toro">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Model</label>
+              <input class="text-input" id="mf-model" type="text" placeholder="Reelmaster 3550-D" value="Reelmaster 5210">
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Asset number</label>
+              <input class="text-input" id="mf-asset" type="text" placeholder="GC-14" value="GC-21">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Year</label>
+              <input class="text-input" id="mf-year" type="text" placeholder="2023" value="2024">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Serial number</label>
+            <input class="text-input" id="mf-serial" type="text" placeholder="Serial number">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Number of cutting units (reels)</label>
+            <input class="text-input" id="mf-units" type="text" placeholder="5" value="5">
+          </div>
+          <div class="note-block" style="margin-top:-2px;">
+            <span class="note-title">Auto-generated</span>
+            We'll create this many cutting-unit positions for you using standard naming — no need to add each one by hand. You can rename or add more later.
+          </div>
+          <div class="section-label">Status</div>
+          <div class="toggle-pair">
+            <div class="option-card selected" onclick="selectType(this)"><div class="oc-title">Active</div></div>
+            <div class="option-card" onclick="selectType(this)"><div class="oc-title">Retired</div></div>
+          </div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="appendMachine()">Save Machine</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: Add Cutting Unit (manual, secondary path) -->
+      <div class="screen" data-screen="addcuttingunit">
+        <div class="topbar">
+          <div class="back" onclick="nav('machinedetail')">‹ Cancel</div>
+          <div class="title">Add Cutting Unit</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="form-group">
+            <label class="form-label">Position</label>
+            <input class="text-input" id="cu-position" type="text" placeholder="e.g. Rear Right" value="Rear Right">
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Reel width</label>
+              <input class="text-input" id="cu-width" type="text" placeholder="7 in" value="7 in">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Reel diameter</label>
+              <input class="text-input" id="cu-diameter" type="text" placeholder="5 in" value="5 in">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Blade count</label>
+            <input class="text-input" id="cu-blades" type="text" placeholder="11" value="11">
+          </div>
+          <div class="section-label">Accessories</div>
+          <div class="option-card" onclick="this.classList.toggle('selected')">
+            <div><div class="oc-title">Groomer present</div></div>
+            <div class="oc-check"></div>
+          </div>
+          <div class="option-card" onclick="this.classList.toggle('selected')">
+            <div><div class="oc-title">Roller brush present</div></div>
+            <div class="oc-check"></div>
+          </div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="appendCuttingUnit()">Save Cutting Unit</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: Grinder list -->
+      <div class="screen" data-screen="grinderlist">
+        <div class="topbar">
+          <div class="back" style="visibility:hidden;">‹</div>
+          <div class="title">Grinders</div>
+          <div class="add-btn" onclick="nav('addgrinder')">＋</div>
+        </div>
+        <div class="screen-scroll">
+          <div class="section-label">Shop grinders</div>
+          <div id="grinderListItems">
+            <div class="list-row" onclick="nav('grinderlist')">
+              <div>
+                <div class="lr-title">Bernhard Express Dual 2000</div>
+                <div class="lr-sub">Spin · Relief · Bedknife</div>
+              </div>
+              <div class="lr-chev">›</div>
+            </div>
+            <div class="list-row" onclick="nav('grinderlist')">
+              <div>
+                <div class="lr-title">Anglemaster 3000</div>
+                <div class="lr-sub">Bedknife only</div>
+              </div>
+              <div class="lr-chev">›</div>
+            </div>
+          </div>
+          <div class="dashed-add" onclick="nav('addgrinder')">＋ Add Grinder</div>
+        </div>
+        <div class="tabbar">
+          <div class="tab-item" onclick="nav('machinelist')">
+            <span class="tab-icon">⚙</span>Machines
+          </div>
+          <div class="tab-item" onclick="nav('recipelist')">
+            <span class="tab-icon">▤</span>Setups
+          </div>
+          <div class="tab-item active" onclick="nav('grinderlist')">
+            <span class="tab-icon">◐</span>Grinders
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: Add Grinder -->
+      <div class="screen" data-screen="addgrinder">
+        <div class="topbar">
+          <div class="back" onclick="nav('grinderlist')">‹ Cancel</div>
+          <div class="title">Add Grinder</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="form-group">
+            <label class="form-label">Manufacturer</label>
+            <input class="text-input" id="gr-manufacturer" type="text" placeholder="Bernhard" value="Bernhard">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Model</label>
+            <input class="text-input" id="gr-model" type="text" placeholder="Express Dual 2000" value="Express Dual 2000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Serial number</label>
+            <input class="text-input" id="gr-serial" type="text" placeholder="Serial number">
+          </div>
+          <div class="section-label">Grind capabilities</div>
+          <div class="option-card selected" onclick="this.classList.toggle('selected')">
+            <div><div class="oc-title">Spin grind</div></div>
+            <div class="oc-check"></div>
+          </div>
+          <div class="option-card selected" onclick="this.classList.toggle('selected')">
+            <div><div class="oc-title">Relief grind</div></div>
+            <div class="oc-check"></div>
+          </div>
+          <div class="option-card" onclick="this.classList.toggle('selected')">
+            <div><div class="oc-title">Bedknife grind</div></div>
+            <div class="oc-check"></div>
+          </div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="appendGrinder()">Save Grinder</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: Setup Library -->
+      <div class="screen" data-screen="recipelist">
+        <div class="topbar">
+          <div class="back" style="visibility:hidden;">‹</div>
+          <div class="title">Grinding Setups</div>
+          <div class="add-btn" onclick="nav('addrecipe')">＋</div>
+        </div>
+        <div class="screen-scroll">
+          <div class="section-label">Shared setup library</div>
+          <div id="recipeListItems"></div>
+        </div>
+        <div class="tabbar">
+          <div class="tab-item" onclick="nav('machinelist')">
+            <span class="tab-icon">⚙</span>Machines
+          </div>
+          <div class="tab-item active" onclick="nav('recipelist')">
+            <span class="tab-icon">▤</span>Setups
+          </div>
+          <div class="tab-item" onclick="nav('grinderlist')">
+            <span class="tab-icon">◐</span>Grinders
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: Setup Detail -->
+      <div class="screen" data-screen="recipedetail">
+        <div class="topbar">
+          <div class="back" onclick="nav('recipelist')">‹ Setups</div>
+          <div class="title" id="rd-titlebar">Setup</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="breadcrumb" id="rd-breadcrumb">—</div>
+          <div class="machine-head" style="font-size:22px;" id="rd-head">—</div>
+          <div class="machine-sub" id="rd-sub" style="margin-bottom:10px;">—</div>
+
+          <div class="status-row">
+            <span class="badge" id="rd-badge">—</span>
+            <span class="badge neutral" id="rd-lastverified">—</span>
+          </div>
+
+          <div class="spec-plate">
+            <div class="spec-plate-label">Grind settings</div>
+            <div class="spec-grid">
+              <div class="spec-cell"><div class="val" id="rd-supportbar">—</div><div class="lbl">Support bar</div></div>
+              <div class="spec-cell"><div class="val" id="rd-rpm">—</div><div class="lbl">Spin drive speed</div></div>
+              <div class="spec-cell"><div class="val" id="rd-traverse">—</div><div class="lbl">Traverse speed</div></div>
+              <div class="spec-cell"><div class="val" id="rd-spinwheel">—</div><div class="lbl">Spin wheel</div></div>
+              <div class="spec-cell"><div class="val" id="rd-reliefwheel">—</div><div class="lbl">Relief wheel</div></div>
+              <div class="spec-cell"><div class="val" id="rd-drive">—</div><div class="lbl">Drive side / direction</div></div>
+            </div>
+          </div>
+
+          <div class="note-block">
+            <span class="note-title">Setup notes</span>
+            <ul id="rd-notes"></ul>
+          </div>
+
+          <div class="meta-line"><span class="k">Grinder</span><span class="v" id="rd-grinder">—</span></div>
+          <div class="meta-line"><span class="k">Sessions using this setup</span><span class="v" id="rd-usecount">—</span></div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" id="rd-promote-btn" onclick="promoteRecipe()">Promote to Verified</button>
+          <div style="text-align:center;margin-top:12px;">
+            <span class="btn-ghost" style="display:inline-block;cursor:pointer;" onclick="nav('recipelist')">Back to Setup Library</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: Add Setup -->
+      <div class="screen" data-screen="addrecipe">
+        <div class="topbar">
+          <div class="back" onclick="nav('recipelist')">‹ Cancel</div>
+          <div class="title">Add Setup</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="form-group">
+            <label class="form-label">Machine model</label>
+            <input class="text-input" id="rf-machine" type="text" placeholder="e.g. Toro Reelmaster 3550-D" value="Toro Reelmaster 3550-D">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cutting-unit type</label>
+            <input class="text-input" id="rf-unittype" type="text" placeholder="e.g. 11-blade reel w/ groomer" value="11-blade reel">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Grinder</label>
+            <input class="text-input" id="rf-grinder" type="text" placeholder="e.g. Bernhard Express Dual 2000" value="Bernhard Express Dual 2000">
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Support bar angle</label>
+              <input class="text-input" id="rf-supportbar" type="text" placeholder="33°" value="33°">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Spin drive speed</label>
+              <input class="text-input" id="rf-rpm" type="text" placeholder="225 rpm" value="225 rpm">
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Traverse speed</label>
+              <input class="text-input" id="rf-traverse" type="text" placeholder="10.5 ft/min" value="10.5 ft/min">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Drive side / direction</label>
+              <input class="text-input" id="rf-drive" type="text" placeholder="Standard / Forward" value="Standard / Forward">
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Spin wheel</label>
+              <input class="text-input" id="rf-spinwheel" type="text" placeholder='.850" · 60g' value='.850" · 60g'>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Relief wheel</label>
+              <input class="text-input" id="rf-reliefwheel" type="text" placeholder='.525" · 46g' value='.525" · 46g'>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Setup notes</label>
+            <textarea class="notes-input" id="rf-notes" placeholder="Removal requirements, clearance notes, etc.">Remove groomer and roller brush before mounting.</textarea>
+          </div>
+          <div class="section-label">Setup status</div>
+          <div class="option-card selected" onclick="selectType(this)" data-status="suggested">
+            <div><div class="oc-title">Suggested</div><div class="oc-sub">Untested starting point</div></div>
+            <div class="oc-check"></div>
+          </div>
+          <div class="option-card" onclick="selectType(this)" data-status="shop_tested">
+            <div><div class="oc-title">Shop-tested</div><div class="oc-sub">Used successfully at least once</div></div>
+            <div class="oc-check"></div>
+          </div>
+          <div class="option-card" onclick="selectType(this)" data-status="verified">
+            <div><div class="oc-title">Verified</div><div class="oc-sub">Confirmed reliable, repeatable</div></div>
+            <div class="oc-check"></div>
+          </div>
+          <div class="option-card" onclick="selectType(this)" data-status="manufacturer_spec">
+            <div><div class="oc-title">Manufacturer spec</div><div class="oc-sub">From OEM documentation</div></div>
+            <div class="oc-check"></div>
+          </div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="appendRecipe()">Save Setup</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// tracks which screen to return to when a step was reached via a Summary "Edit" shortcut
+var editReturn = {};
+
+function nav(screenName){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelector('[data-screen="'+screenName+'"]').classList.add('active');
+  if(screenName === 'bedknifehistory') renderBedknifeHistory();
+}
+function startSession(){
+  nav('type');
+}
+// jump directly from Summary to a given step, remembering to return to Summary
+function navFrom(target, origin){
+  editReturn[target] = origin;
+  var lbl = document.getElementById('backLabel-'+target);
+  if(lbl) lbl.textContent = 'Cancel edit';
+  nav(target);
+}
+// back button: if this screen was reached via an edit shortcut, return to Summary; otherwise step back normally
+function navBack(current, normalPrev){
+  if(editReturn[current]){
+    var origin = editReturn[current];
+    editReturn[current] = null;
+    var lbl = document.getElementById('backLabel-'+current);
+    if(lbl) lbl.textContent = current==='type' ? 'Cancel' : 'Back';
+    nav(origin);
+  } else {
+    nav(normalPrev);
+  }
+}
+// continue button: if this screen was reached via an edit shortcut, save and return to Summary; otherwise proceed forward
+function navForward(current, normalNext){
+  if(editReturn[current]){
+    var origin = editReturn[current];
+    editReturn[current] = null;
+    var lbl = document.getElementById('backLabel-'+current);
+    if(lbl) lbl.textContent = current==='type' ? 'Cancel' : 'Back';
+    nav(origin);
+  } else {
+    nav(normalNext);
+  }
+}
+function selectType(el){
+  el.parentElement.querySelectorAll('.option-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function pickResult(el){
+  el.parentElement.querySelectorAll('.result-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+// ---- lightweight in-memory data model ----
+var machines = [
+  {
+    id: 1, manufacturer:'Toro', model:'Reelmaster 3550-D', asset:'GC-14',
+    serial:'TR3550-88213', year:'2023', hours:'1,204 hrs', status:'Active',
+    units: [
+      {position:'Front Left', blades:11, status:'Verified setup'},
+      {position:'Front Right', blades:11, status:'Verified setup'},
+      {position:'Center', blades:11, status:'Shop-tested setup'},
+      {position:'Rear Left', blades:11, status:'Verified setup'},
+      {position:'Rear Right', blades:11, status:'Verified setup'}
+    ]
+  },
+  {
+    id: 2, manufacturer:'Toro', model:'Reelmaster 5410', asset:'GC-09',
+    serial:'TR5410-55012', year:'2022', hours:'2,015 hrs', status:'Active',
+    units: [
+      {position:'Front Left', blades:8, status:'Verified setup'},
+      {position:'Front Right', blades:8, status:'Verified setup'},
+      {position:'Center', blades:8, status:'Verified setup'},
+      {position:'Rear Left', blades:8, status:'Verified setup'},
+      {position:'Rear Right', blades:8, status:'Verified setup'}
+    ]
+  },
+  {
+    id: 3, manufacturer:'Toro', model:'Greensmaster 3120', asset:'GC-03',
+    serial:'TR3120-30044', year:'2024', hours:'640 hrs', status:'Active',
+    units: [
+      {position:'Left', blades:14, status:'Verified setup'},
+      {position:'Center', blades:14, status:'Verified setup'},
+      {position:'Right', blades:14, status:'Verified setup'}
+    ]
+  }
+];
+var currentMachineId = null;
+var nextMachineId = 4;
+
+// standard position naming by count, falls back to generic "Unit N"
+function generateUnitPositions(count){
+  var namedSets = {
+    2: ['Left','Right'],
+    3: ['Left','Center','Right'],
+    4: ['Front Left','Front Right','Rear Left','Rear Right'],
+    5: ['Front Left','Front Right','Center','Rear Left','Rear Right'],
+    7: ['Front Left','Front Right','Center Left','Center Right','Rear Left','Rear Right','Rear Center']
+  };
+  var names = namedSets[count];
+  if(!names){
+    names = [];
+    for(var i=1;i<=count;i++) names.push('Unit '+i);
+  }
+  return names.map(function(n){ return {position:n, blades:'—', status:'No setup yet'}; });
+}
+
+function renderMachineList(){
+  var container = document.getElementById('machineListItems');
+  container.innerHTML = '';
+  machines.forEach(function(m){
+    var row = document.createElement('div');
+    row.className = 'list-row';
+    row.onclick = function(){ openMachine(m.id); };
+    row.innerHTML = '<div><div class="lr-title">'+m.manufacturer+' '+m.model+'</div>'+
+      '<div class="lr-sub">Asset #'+m.asset+' · '+m.units.length+' cutting units</div></div>'+
+      '<div class="lr-chev">›</div>';
+    container.appendChild(row);
+  });
+}
+
+function openMachine(id){
+  currentMachineId = id;
+  renderMachineDetail();
+  nav('machinedetail');
+}
+
+function renderMachineDetail(){
+  var m = machines.find(function(x){ return x.id === currentMachineId; });
+  if(!m) return;
+  document.getElementById('md-titlebar').textContent = m.model;
+  document.getElementById('md-head').textContent = m.manufacturer+' '+m.model;
+  document.getElementById('md-sub').textContent = m.manufacturer+' · Asset #'+m.asset;
+  document.getElementById('md-serial').textContent = m.serial || '—';
+  document.getElementById('md-year').textContent = m.year || '—';
+  document.getElementById('md-hours').textContent = m.hours || '—';
+  document.getElementById('md-status').textContent = m.status || '—';
+
+  var list = document.getElementById('cuttingUnitsList');
+  list.innerHTML = '';
+  m.units.forEach(function(u){
+    var row = document.createElement('div');
+    row.className = 'list-row';
+    row.onclick = function(){ nav('quickref'); };
+    row.innerHTML = '<div><div class="lr-title">'+u.position+'</div>'+
+      '<div class="lr-sub">'+u.blades+'-blade · '+u.status+'</div></div>'+
+      '<div class="lr-chev">›</div>';
+    list.appendChild(row);
+  });
+}
+
+function appendMachine(){
+  var mfr = document.getElementById('mf-manufacturer').value || 'Unknown';
+  var model = document.getElementById('mf-model').value || 'Untitled model';
+  var asset = document.getElementById('mf-asset').value || '—';
+  var serial = document.getElementById('mf-serial').value || '—';
+  var year = document.getElementById('mf-year').value || '—';
+  var count = parseInt(document.getElementById('mf-units').value, 10);
+  if(!count || count < 1) count = 1;
+  var statusEl = document.querySelector('[data-screen="addmachine"] .toggle-pair .option-card.selected .oc-title');
+  var status = statusEl ? statusEl.textContent : 'Active';
+
+  var newMachine = {
+    id: nextMachineId++,
+    manufacturer: mfr, model: model, asset: asset,
+    serial: serial, year: year, hours: '0 hrs', status: status,
+    units: generateUnitPositions(count)
+  };
+  machines.push(newMachine);
+  renderMachineList();
+  openMachine(newMachine.id); // jump straight to the generated cutting units
+}
+
+function appendCuttingUnit(){
+  var m = machines.find(function(x){ return x.id === currentMachineId; });
+  if(!m) return;
+  var pos = document.getElementById('cu-position').value || 'New Position';
+  var blades = document.getElementById('cu-blades').value || '—';
+  m.units.push({position:pos, blades:blades, status:'No setup yet'});
+  renderMachineDetail();
+  renderMachineList();
+  nav('machinedetail');
+}
+
+// ---- recipe library data model ----
+var recipes = [
+  {
+    id:1, machine:'Toro Reelmaster 3550-D', unitType:'11-blade reel w/ groomer & roller',
+    grinder:'Bernhard Express Dual 2000', status:'verified', lastVerified:'Jul 22, 2026', uses:3,
+    supportBar:'33°', rpm:'225 rpm', traverse:'10.5 ft/min', spinWheel:'.850" · 60g', reliefWheel:'.525" · 46g',
+    drive:'Reel-motor side / Reverse',
+    notes:['Remove rear roller brush and groomer before mounting.','Front-left / rear-left: move spin drive to reel-motor side, set to reverse.','Lower grinding stone to clear front roller.']
+  },
+  {
+    id:2, machine:'Toro Reelmaster 5410', unitType:'8-blade reel',
+    grinder:'Bernhard Express Dual 2000', status:'verified', lastVerified:'Jun 10, 2026', uses:2,
+    supportBar:'30°', rpm:'225 rpm', traverse:'12.5 ft/min', spinWheel:'.850" · 60g', reliefWheel:'.525" · 46g',
+    drive:'Standard / Forward',
+    notes:['Bedknife JRM 4BT243207.','Top-face 5°, front-face 6°.']
+  },
+  {
+    id:3, machine:'Toro Greensmaster 3120', unitType:'14-blade reel',
+    grinder:'Bernhard Express Dual 2000', status:'shop_tested', lastVerified:'May 2, 2026', uses:1,
+    supportBar:'43°', rpm:'200 rpm', traverse:'9 ft/min', spinWheel:'.850" · 60g', reliefWheel:'.525" · 46g',
+    drive:'Standard / Forward',
+    notes:['200 RPM produced the preferred smooth grind sound vs. a slightly choppy sound at 180 RPM.']
+  }
+];
+var currentRecipeId = null;
+var nextRecipeId = 4;
+
+var statusLabels = {
+  verified:{label:'✓ Verified', cls:'verified'},
+  shop_tested:{label:'Shop-tested', cls:'shoptested'},
+  suggested:{label:'Suggested', cls:'neutral'},
+  manufacturer_spec:{label:'Mfr Spec', cls:'neutral'}
+};
+
+function renderRecipeList(){
+  var container = document.getElementById('recipeListItems');
+  container.innerHTML = '';
+  recipes.forEach(function(r){
+    var s = statusLabels[r.status];
+    var row = document.createElement('div');
+    row.className = 'list-row';
+    row.onclick = function(){ openRecipe(r.id); };
+    row.innerHTML = '<div><div class="lr-title">'+r.machine+'</div>'+
+      '<div class="lr-sub">'+r.unitType+' · Updated '+r.lastVerified+'</div></div>'+
+      '<span class="badge '+s.cls+'" style="flex-shrink:0;margin-left:8px;">'+s.label+'</span>';
+    container.appendChild(row);
+  });
+}
+
+function openRecipe(id){
+  currentRecipeId = id;
+  renderRecipeDetail();
+  nav('recipedetail');
+}
+
+function renderRecipeDetail(){
+  var r = recipes.find(function(x){ return x.id === currentRecipeId; });
+  if(!r) return;
+  var s = statusLabels[r.status];
+  document.getElementById('rd-titlebar').textContent = r.machine;
+  document.getElementById('rd-breadcrumb').textContent = r.unitType;
+  document.getElementById('rd-head').textContent = r.machine;
+  document.getElementById('rd-sub').textContent = r.unitType;
+  document.getElementById('rd-badge').textContent = s.label;
+  document.getElementById('rd-badge').className = 'badge '+s.cls;
+  document.getElementById('rd-lastverified').textContent = 'Updated '+r.lastVerified;
+  document.getElementById('rd-supportbar').textContent = r.supportBar;
+  document.getElementById('rd-rpm').textContent = r.rpm;
+  document.getElementById('rd-traverse').textContent = r.traverse;
+  document.getElementById('rd-spinwheel').textContent = r.spinWheel;
+  document.getElementById('rd-reliefwheel').textContent = r.reliefWheel;
+  document.getElementById('rd-drive').textContent = r.drive;
+  document.getElementById('rd-grinder').textContent = r.grinder;
+  document.getElementById('rd-usecount').textContent = r.uses;
+  var notesEl = document.getElementById('rd-notes');
+  notesEl.innerHTML = '';
+  r.notes.forEach(function(n){
+    var li = document.createElement('li');
+    li.textContent = n;
+    notesEl.appendChild(li);
+  });
+  var promoteBtn = document.getElementById('rd-promote-btn');
+  if(r.status === 'verified'){
+    promoteBtn.style.display = 'none';
+  } else {
+    promoteBtn.style.display = 'flex';
+    promoteBtn.textContent = 'Promote to Verified';
+  }
+}
+
+function promoteRecipe(){
+  var r = recipes.find(function(x){ return x.id === currentRecipeId; });
+  if(!r) return;
+  r.status = 'verified';
+  r.lastVerified = 'Today';
+  renderRecipeDetail();
+  renderRecipeList();
+}
+
+function appendRecipe(){
+  var machine = document.getElementById('rf-machine').value || 'Unknown machine';
+  var unitType = document.getElementById('rf-unittype').value || 'Unspecified unit type';
+  var grinder = document.getElementById('rf-grinder').value || '—';
+  var supportBar = document.getElementById('rf-supportbar').value || '—';
+  var rpm = document.getElementById('rf-rpm').value || '—';
+  var traverse = document.getElementById('rf-traverse').value || '—';
+  var drive = document.getElementById('rf-drive').value || '—';
+  var spinWheel = document.getElementById('rf-spinwheel').value || '—';
+  var reliefWheel = document.getElementById('rf-reliefwheel').value || '—';
+  var notesRaw = document.getElementById('rf-notes').value || '';
+  var statusEl = document.querySelector('[data-screen="addrecipe"] .option-card.selected');
+  var status = statusEl ? statusEl.getAttribute('data-status') : 'suggested';
+
+  var newRecipe = {
+    id: nextRecipeId++, machine:machine, unitType:unitType, grinder:grinder,
+    status:status, lastVerified:'Today', uses:0,
+    supportBar:supportBar, rpm:rpm, traverse:traverse, spinWheel:spinWheel, reliefWheel:reliefWheel,
+    drive:drive, notes: notesRaw ? [notesRaw] : []
+  };
+  recipes.push(newRecipe);
+  renderRecipeList();
+  openRecipe(newRecipe.id);
+}
+
+// ---- bedknife tracking data model (demo: Front Left position on 3550-D) ----
+var bedknives = [
+  {id:1, manufacturer:'Toro', partNumber:'104-4009-02', material:'High-carbon steel', topFace:'5°', frontFace:'6°', minThickness:'.175 in', condition:'New', installDate:'Feb 3, 2026', removalDate:'Jul 22, 2026', grindCycles:9},
+  {id:2, manufacturer:'Toro', partNumber:'104-4009-03', material:'High-carbon steel', topFace:'5°', frontFace:'6°', minThickness:'.175 in', condition:'New', installDate:'Jul 22, 2026', removalDate:null, grindCycles:3}
+];
+var nextBedknifeId = 3;
+
+function renderBedknifeCurrent(){
+  var current = bedknives.find(function(b){ return b.removalDate === null; });
+  if(!current) return;
+  document.getElementById('bk-partnum').textContent = current.partNumber;
+  document.getElementById('bk-cycles').textContent = current.grindCycles;
+  document.getElementById('bk-installdate').textContent = current.installDate;
+}
+
+function renderBedknifeHistory(){
+  var list = document.getElementById('bedknifeHistoryList');
+  list.innerHTML = '';
+  var sorted = bedknives.slice().sort(function(a,b){ return b.id - a.id; });
+  sorted.forEach(function(b){
+    var isCurrent = b.removalDate === null;
+    var row = document.createElement('div');
+    row.className = 'summary-card';
+    row.innerHTML =
+      '<div class="sc-head">'+b.partNumber+(isCurrent ? ' <span class="badge verified" style="text-transform:none;">Current</span>' : '')+'</div>'+
+      '<div class="summary-row"><span class="k">Material</span><span class="v">'+b.material+'</span></div>'+
+      '<div class="summary-row"><span class="k">Top / front face</span><span class="v">'+b.topFace+' / '+b.frontFace+'</span></div>'+
+      '<div class="summary-row"><span class="k">Condition at install</span><span class="v">'+b.condition+'</span></div>'+
+      '<div class="summary-row"><span class="k">Installed</span><span class="v">'+b.installDate+'</span></div>'+
+      '<div class="summary-row"><span class="k">Removed</span><span class="v">'+(b.removalDate || '—')+'</span></div>'+
+      '<div class="summary-row"><span class="k">Grind cycles</span><span class="v">'+b.grindCycles+'</span></div>';
+    list.appendChild(row);
+  });
+}
+
+function saveBedknifeReplacement(){
+  var current = bedknives.find(function(b){ return b.removalDate === null; });
+  if(current) current.removalDate = 'Today';
+
+  var conditionEl = document.querySelector('[data-screen="replacebedknife"] .toggle-pair .option-card.selected');
+  var condition = conditionEl ? conditionEl.getAttribute('data-condition') : 'New';
+
+  var newBedknife = {
+    id: nextBedknifeId++,
+    manufacturer: document.getElementById('bk-manufacturer').value || '—',
+    partNumber: document.getElementById('bk-partnumber').value || '—',
+    material: document.getElementById('bk-material').value || '—',
+    topFace: document.getElementById('bk-topface').value || '—',
+    frontFace: document.getElementById('bk-frontface').value || '—',
+    minThickness: document.getElementById('bk-minthick').value || '—',
+    condition: condition,
+    installDate: 'Today',
+    removalDate: null,
+    grindCycles: 0
+  };
+  bedknives.push(newBedknife);
+  renderBedknifeCurrent();
+  renderBedknifeHistory();
+  nav('bedknifehistory');
+}
+
+function appendGrinder(){
+  var mfr = document.getElementById('gr-manufacturer').value || 'Unknown';
+  var model = document.getElementById('gr-model').value || 'Untitled model';
+  var caps = [];
+  document.querySelectorAll('[data-screen="addgrinder"] .option-card').forEach(function(c){
+    if(c.classList.contains('selected')) caps.push(c.querySelector('.oc-title').textContent.replace(' grind',''));
+  });
+  var row = document.createElement('div');
+  row.className = 'list-row';
+  row.setAttribute('onclick','nav(\'grinderlist\')');
+  row.innerHTML = '<div><div class="lr-title">'+mfr+' '+model+'</div>'+
+    '<div class="lr-sub">'+(caps.join(' · ')||'No capabilities set')+'</div></div>'+
+    '<div class="lr-chev">›</div>';
+  document.getElementById('grinderListItems').appendChild(row);
+  nav('grinderlist');
+}
+function adjustVal(btn,delta){
+  const valEl = btn.parentElement.querySelector('.field-value');
+  const unitEl = valEl.querySelector('.unit');
+  const unitText = unitEl ? unitEl.outerHTML : '';
+  let current = parseFloat(valEl.textContent);
+  let next = current + delta;
+  if(Number.isInteger(delta)) next = Math.round(next);
+  else next = Math.round(next*100)/100;
+  valEl.innerHTML = next + unitText;
+  btn.closest('.field-row').classList.add('changed');
+}
+
+renderMachineList();
+renderRecipeList();
+renderBedknifeCurrent();
+</script>
+
+</body>
+</html>
