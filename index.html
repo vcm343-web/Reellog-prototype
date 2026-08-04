@@ -906,8 +906,11 @@
             <span class="badge neutral">Last grind Jul 22</span>
           </div>
 
-          <div class="spec-plate">
-            <div class="spec-plate-label">Grind Setup — Toro 3550-D / 11-blade</div>
+          <div class="spec-plate" onclick="openRecipe(1)" style="cursor:pointer;">
+            <div class="spec-plate-label" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>Grind Setup — Toro 3550-D / 11-blade</span>
+              <span style="color:var(--accent-amber);font-size:11px;">View full setup ›</span>
+            </div>
             <div class="spec-grid">
               <div class="spec-cell">
                 <div class="val">33<span class="unit">°</span></div>
@@ -936,6 +939,26 @@
             </div>
           </div>
 
+          <div class="spec-plate" onclick="nav('bedknifehistory')" style="cursor:pointer;">
+            <div class="spec-plate-label" style="display:flex;justify-content:space-between;align-items:center;">
+              <span>Current Bedknife</span>
+              <span style="color:var(--accent-amber);font-size:11px;">History ›</span>
+            </div>
+            <div class="spec-grid">
+              <div class="spec-cell">
+                <div class="val" id="bk-partnum" style="font-size:15px;">—</div>
+                <div class="lbl">Part number</div>
+              </div>
+              <div class="spec-cell">
+                <div class="val" id="bk-cycles">—</div>
+                <div class="lbl">Grind cycles</div>
+              </div>
+            </div>
+            <div class="meta-line" style="border-bottom:none;padding-top:10px;">
+              <span class="k">Installed</span><span class="v" id="bk-installdate">—</span>
+            </div>
+          </div>
+
           <div class="note-block">
             <span class="note-title">Critical setup notes</span>
             <ul>
@@ -949,10 +972,82 @@
           <div class="meta-line"><span class="k">Last technician</span><span class="v">M. Alvarez</span></div>
           <div class="meta-line"><span class="k">Last grind date</span><span class="v">Jul 22, 2026</span></div>
           <div class="meta-line"><span class="k">Machine hours</span><span class="v">1,204 hrs</span></div>
-          <div class="meta-line"><span class="k">Recipe status</span><span class="v">Verified (3 uses)</span></div>
+          <div class="meta-line"><span class="k">Setup status</span><span class="v">Verified (3 uses)</span></div>
         </div>
         <div class="cta-dock">
           <button class="btn btn-primary" onclick="startSession()">Start Service Session</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: Bedknife History -->
+      <div class="screen" data-screen="bedknifehistory">
+        <div class="topbar">
+          <div class="back" onclick="nav('quickref')">‹ Cutting Unit</div>
+          <div class="title">Bedknife History</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="breadcrumb">Reelmaster 3550-D · Front Left</div>
+          <div class="machine-head" style="font-size:22px;margin-bottom:14px;">Bedknife Log</div>
+          <div id="bedknifeHistoryList"></div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="nav('replacebedknife')">Replace Bedknife</button>
+        </div>
+      </div>
+
+      <!-- SCREEN: Replace Bedknife -->
+      <div class="screen" data-screen="replacebedknife">
+        <div class="topbar">
+          <div class="back" onclick="nav('bedknifehistory')">‹ Cancel</div>
+          <div class="title">Replace Bedknife</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="note-block">
+            <span class="note-title">Removing current bedknife</span>
+            The active bedknife will be marked removed today and added to history. Enter the new one below.
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Manufacturer</label>
+              <input class="text-input" id="bk-manufacturer" type="text" placeholder="Toro" value="Toro">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Part number</label>
+              <input class="text-input" id="bk-partnumber" type="text" placeholder="104-4009-03" value="104-4009-03">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Material</label>
+            <input class="text-input" id="bk-material" type="text" placeholder="High-carbon steel" value="High-carbon steel">
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Top-face angle</label>
+              <input class="text-input" id="bk-topface" type="text" placeholder="5°" value="5°">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Front-face angle</label>
+              <input class="text-input" id="bk-frontface" type="text" placeholder="6°" value="6°">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Minimum thickness</label>
+            <input class="text-input" id="bk-minthick" type="text" placeholder=".175 in" value=".175 in">
+          </div>
+          <div class="section-label">Condition</div>
+          <div class="toggle-pair">
+            <div class="option-card selected" onclick="selectType(this)" data-condition="New">
+              <div class="oc-title">New</div>
+            </div>
+            <div class="option-card" onclick="selectType(this)" data-condition="Reused">
+              <div class="oc-title">Reused</div>
+            </div>
+          </div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="saveBedknifeReplacement()">Save Replacement</button>
         </div>
       </div>
 
@@ -974,7 +1069,7 @@
           <div class="option-card selected" onclick="selectType(this)">
             <div>
               <div class="oc-title">Spin &amp; relief grind</div>
-              <div class="oc-sub">Full recipe applies — last used Jul 22</div>
+              <div class="oc-sub">Full setup applies — last used Jul 22</div>
             </div>
             <div class="oc-check"></div>
           </div>
@@ -1028,7 +1123,7 @@
         </div>
         <div class="screen-scroll">
           <div class="note-block" style="border-left-color:var(--accent-green);">
-            <span class="note-title" style="color:var(--accent-green);">Loaded from verified recipe</span>
+            <span class="note-title" style="color:var(--accent-green);">Loaded from verified setup</span>
             Only fields you change are marked. Everything else carries over automatically.
           </div>
 
@@ -1037,7 +1132,7 @@
           <div class="field-row">
             <div>
               <div class="f-label">Support bar angle</div>
-              <div class="f-prev">Recipe: 33°</div>
+              <div class="f-prev">Setup: 33°</div>
             </div>
             <div class="field-control">
               <div class="stepper-btn" onclick="adjustVal(this,-1)">–</div>
@@ -1049,7 +1144,7 @@
           <div class="field-row changed">
             <div>
               <div class="f-label">Spin drive speed</div>
-              <div class="f-prev">Recipe: 225 rpm</div>
+              <div class="f-prev">Setup: 225 rpm</div>
             </div>
             <div class="field-control">
               <div class="stepper-btn" onclick="adjustVal(this,-5)">–</div>
@@ -1061,7 +1156,7 @@
           <div class="field-row">
             <div>
               <div class="f-label">Traverse speed</div>
-              <div class="f-prev">Recipe: 10.5 ft/min</div>
+              <div class="f-prev">Setup: 10.5 ft/min</div>
             </div>
             <div class="field-control">
               <div class="stepper-btn" onclick="adjustVal(this,-0.5)">–</div>
@@ -1074,7 +1169,7 @@
           <div class="field-row">
             <div>
               <div class="f-label">Spin wheel</div>
-              <div class="f-prev">Recipe: .850" · 60 grit</div>
+              <div class="f-prev">Setup: .850" · 60 grit</div>
             </div>
             <div class="field-control">
               <div class="field-value" style="min-width:auto;">.850" 60g</div>
@@ -1083,7 +1178,7 @@
           <div class="field-row">
             <div>
               <div class="f-label">Relief wheel</div>
-              <div class="f-prev">Recipe: .525" · 46 grit</div>
+              <div class="f-prev">Setup: .525" · 46 grit</div>
             </div>
             <div class="field-control">
               <div class="field-value" style="min-width:auto;">.525" 46g</div>
@@ -1203,12 +1298,12 @@
           </div>
 
           <div class="note-block">
-            <span class="note-title">Recipe update</span>
-            Spin speed differs from the verified recipe by 5 rpm. Save this as the new verified value, or keep it as a one-off for this session?
+            <span class="note-title">Setup update</span>
+            Spin speed differs from the verified setup by 5 rpm. Save this as the new verified value, or keep it as a one-off for this session?
           </div>
           <div class="btn-row" style="margin-bottom:14px;">
-            <button class="btn btn-secondary" style="font-size:12.5px;padding:12px;">Keep recipe as-is</button>
-            <button class="btn btn-secondary" style="font-size:12.5px;padding:12px;border-color:var(--accent-amber);color:var(--accent-amber);">Update recipe</button>
+            <button class="btn btn-secondary" style="font-size:12.5px;padding:12px;">Keep setup as-is</button>
+            <button class="btn btn-secondary" style="font-size:12.5px;padding:12px;border-color:var(--accent-amber);color:var(--accent-amber);">Update setup</button>
           </div>
         </div>
         <div class="cta-dock">
@@ -1243,6 +1338,9 @@
         <div class="tabbar">
           <div class="tab-item active" onclick="nav('machinelist')">
             <span class="tab-icon">⚙</span>Machines
+          </div>
+          <div class="tab-item" onclick="nav('recipelist')">
+            <span class="tab-icon">▤</span>Setups
           </div>
           <div class="tab-item" onclick="nav('grinderlist')">
             <span class="tab-icon">◐</span>Grinders
@@ -1400,6 +1498,9 @@
           <div class="tab-item" onclick="nav('machinelist')">
             <span class="tab-icon">⚙</span>Machines
           </div>
+          <div class="tab-item" onclick="nav('recipelist')">
+            <span class="tab-icon">▤</span>Setups
+          </div>
           <div class="tab-item active" onclick="nav('grinderlist')">
             <span class="tab-icon">◐</span>Grinders
           </div>
@@ -1445,6 +1546,152 @@
         </div>
       </div>
 
+      <!-- SCREEN: Setup Library -->
+      <div class="screen" data-screen="recipelist">
+        <div class="topbar">
+          <div class="back" style="visibility:hidden;">‹</div>
+          <div class="title">Grinding Setups</div>
+          <div class="add-btn" onclick="nav('addrecipe')">＋</div>
+        </div>
+        <div class="screen-scroll">
+          <div class="section-label">Shared setup library</div>
+          <div id="recipeListItems"></div>
+        </div>
+        <div class="tabbar">
+          <div class="tab-item" onclick="nav('machinelist')">
+            <span class="tab-icon">⚙</span>Machines
+          </div>
+          <div class="tab-item active" onclick="nav('recipelist')">
+            <span class="tab-icon">▤</span>Setups
+          </div>
+          <div class="tab-item" onclick="nav('grinderlist')">
+            <span class="tab-icon">◐</span>Grinders
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: Setup Detail -->
+      <div class="screen" data-screen="recipedetail">
+        <div class="topbar">
+          <div class="back" onclick="nav('recipelist')">‹ Setups</div>
+          <div class="title" id="rd-titlebar">Setup</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="breadcrumb" id="rd-breadcrumb">—</div>
+          <div class="machine-head" style="font-size:22px;" id="rd-head">—</div>
+          <div class="machine-sub" id="rd-sub" style="margin-bottom:10px;">—</div>
+
+          <div class="status-row">
+            <span class="badge" id="rd-badge">—</span>
+            <span class="badge neutral" id="rd-lastverified">—</span>
+          </div>
+
+          <div class="spec-plate">
+            <div class="spec-plate-label">Grind settings</div>
+            <div class="spec-grid">
+              <div class="spec-cell"><div class="val" id="rd-supportbar">—</div><div class="lbl">Support bar</div></div>
+              <div class="spec-cell"><div class="val" id="rd-rpm">—</div><div class="lbl">Spin drive speed</div></div>
+              <div class="spec-cell"><div class="val" id="rd-traverse">—</div><div class="lbl">Traverse speed</div></div>
+              <div class="spec-cell"><div class="val" id="rd-spinwheel">—</div><div class="lbl">Spin wheel</div></div>
+              <div class="spec-cell"><div class="val" id="rd-reliefwheel">—</div><div class="lbl">Relief wheel</div></div>
+              <div class="spec-cell"><div class="val" id="rd-drive">—</div><div class="lbl">Drive side / direction</div></div>
+            </div>
+          </div>
+
+          <div class="note-block">
+            <span class="note-title">Setup notes</span>
+            <ul id="rd-notes"></ul>
+          </div>
+
+          <div class="meta-line"><span class="k">Grinder</span><span class="v" id="rd-grinder">—</span></div>
+          <div class="meta-line"><span class="k">Sessions using this setup</span><span class="v" id="rd-usecount">—</span></div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" id="rd-promote-btn" onclick="promoteRecipe()">Promote to Verified</button>
+          <div style="text-align:center;margin-top:12px;">
+            <span class="btn-ghost" style="display:inline-block;cursor:pointer;" onclick="nav('recipelist')">Back to Setup Library</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: Add Setup -->
+      <div class="screen" data-screen="addrecipe">
+        <div class="topbar">
+          <div class="back" onclick="nav('recipelist')">‹ Cancel</div>
+          <div class="title">Add Setup</div>
+          <div class="spacer"></div>
+        </div>
+        <div class="screen-scroll">
+          <div class="form-group">
+            <label class="form-label">Machine model</label>
+            <input class="text-input" id="rf-machine" type="text" placeholder="e.g. Toro Reelmaster 3550-D" value="Toro Reelmaster 3550-D">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cutting-unit type</label>
+            <input class="text-input" id="rf-unittype" type="text" placeholder="e.g. 11-blade reel w/ groomer" value="11-blade reel">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Grinder</label>
+            <input class="text-input" id="rf-grinder" type="text" placeholder="e.g. Bernhard Express Dual 2000" value="Bernhard Express Dual 2000">
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Support bar angle</label>
+              <input class="text-input" id="rf-supportbar" type="text" placeholder="33°" value="33°">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Spin drive speed</label>
+              <input class="text-input" id="rf-rpm" type="text" placeholder="225 rpm" value="225 rpm">
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Traverse speed</label>
+              <input class="text-input" id="rf-traverse" type="text" placeholder="10.5 ft/min" value="10.5 ft/min">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Drive side / direction</label>
+              <input class="text-input" id="rf-drive" type="text" placeholder="Standard / Forward" value="Standard / Forward">
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label">Spin wheel</label>
+              <input class="text-input" id="rf-spinwheel" type="text" placeholder='.850" · 60g' value='.850" · 60g'>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Relief wheel</label>
+              <input class="text-input" id="rf-reliefwheel" type="text" placeholder='.525" · 46g' value='.525" · 46g'>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Setup notes</label>
+            <textarea class="notes-input" id="rf-notes" placeholder="Removal requirements, clearance notes, etc.">Remove groomer and roller brush before mounting.</textarea>
+          </div>
+          <div class="section-label">Setup status</div>
+          <div class="option-card selected" onclick="selectType(this)" data-status="suggested">
+            <div><div class="oc-title">Suggested</div><div class="oc-sub">Untested starting point</div></div>
+            <div class="oc-check"></div>
+          </div>
+          <div class="option-card" onclick="selectType(this)" data-status="shop_tested">
+            <div><div class="oc-title">Shop-tested</div><div class="oc-sub">Used successfully at least once</div></div>
+            <div class="oc-check"></div>
+          </div>
+          <div class="option-card" onclick="selectType(this)" data-status="verified">
+            <div><div class="oc-title">Verified</div><div class="oc-sub">Confirmed reliable, repeatable</div></div>
+            <div class="oc-check"></div>
+          </div>
+          <div class="option-card" onclick="selectType(this)" data-status="manufacturer_spec">
+            <div><div class="oc-title">Manufacturer spec</div><div class="oc-sub">From OEM documentation</div></div>
+            <div class="oc-check"></div>
+          </div>
+        </div>
+        <div class="cta-dock">
+          <button class="btn btn-primary" onclick="appendRecipe()">Save Setup</button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -1456,6 +1703,7 @@ var editReturn = {};
 function nav(screenName){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelector('[data-screen="'+screenName+'"]').classList.add('active');
+  if(screenName === 'bedknifehistory') renderBedknifeHistory();
 }
 function startSession(){
   nav('type');
@@ -1505,31 +1753,31 @@ var machines = [
     id: 1, manufacturer:'Toro', model:'Reelmaster 3550-D', asset:'GC-14',
     serial:'TR3550-88213', year:'2023', hours:'1,204 hrs', status:'Active',
     units: [
-      {position:'Front Left', blades:11, status:'Verified recipe'},
-      {position:'Front Right', blades:11, status:'Verified recipe'},
-      {position:'Center', blades:11, status:'Shop-tested recipe'},
-      {position:'Rear Left', blades:11, status:'Verified recipe'},
-      {position:'Rear Right', blades:11, status:'Verified recipe'}
+      {position:'Front Left', blades:11, status:'Verified setup'},
+      {position:'Front Right', blades:11, status:'Verified setup'},
+      {position:'Center', blades:11, status:'Shop-tested setup'},
+      {position:'Rear Left', blades:11, status:'Verified setup'},
+      {position:'Rear Right', blades:11, status:'Verified setup'}
     ]
   },
   {
     id: 2, manufacturer:'Toro', model:'Reelmaster 5410', asset:'GC-09',
     serial:'TR5410-55012', year:'2022', hours:'2,015 hrs', status:'Active',
     units: [
-      {position:'Front Left', blades:8, status:'Verified recipe'},
-      {position:'Front Right', blades:8, status:'Verified recipe'},
-      {position:'Center', blades:8, status:'Verified recipe'},
-      {position:'Rear Left', blades:8, status:'Verified recipe'},
-      {position:'Rear Right', blades:8, status:'Verified recipe'}
+      {position:'Front Left', blades:8, status:'Verified setup'},
+      {position:'Front Right', blades:8, status:'Verified setup'},
+      {position:'Center', blades:8, status:'Verified setup'},
+      {position:'Rear Left', blades:8, status:'Verified setup'},
+      {position:'Rear Right', blades:8, status:'Verified setup'}
     ]
   },
   {
     id: 3, manufacturer:'Toro', model:'Greensmaster 3120', asset:'GC-03',
     serial:'TR3120-30044', year:'2024', hours:'640 hrs', status:'Active',
     units: [
-      {position:'Left', blades:14, status:'Verified recipe'},
-      {position:'Center', blades:14, status:'Verified recipe'},
-      {position:'Right', blades:14, status:'Verified recipe'}
+      {position:'Left', blades:14, status:'Verified setup'},
+      {position:'Center', blades:14, status:'Verified setup'},
+      {position:'Right', blades:14, status:'Verified setup'}
     ]
   }
 ];
@@ -1550,7 +1798,7 @@ function generateUnitPositions(count){
     names = [];
     for(var i=1;i<=count;i++) names.push('Unit '+i);
   }
-  return names.map(function(n){ return {position:n, blades:'—', status:'No recipe yet'}; });
+  return names.map(function(n){ return {position:n, blades:'—', status:'No setup yet'}; });
 }
 
 function renderMachineList(){
@@ -1624,10 +1872,195 @@ function appendCuttingUnit(){
   if(!m) return;
   var pos = document.getElementById('cu-position').value || 'New Position';
   var blades = document.getElementById('cu-blades').value || '—';
-  m.units.push({position:pos, blades:blades, status:'No recipe yet'});
+  m.units.push({position:pos, blades:blades, status:'No setup yet'});
   renderMachineDetail();
   renderMachineList();
   nav('machinedetail');
+}
+
+// ---- recipe library data model ----
+var recipes = [
+  {
+    id:1, machine:'Toro Reelmaster 3550-D', unitType:'11-blade reel w/ groomer & roller',
+    grinder:'Bernhard Express Dual 2000', status:'verified', lastVerified:'Jul 22, 2026', uses:3,
+    supportBar:'33°', rpm:'225 rpm', traverse:'10.5 ft/min', spinWheel:'.850" · 60g', reliefWheel:'.525" · 46g',
+    drive:'Reel-motor side / Reverse',
+    notes:['Remove rear roller brush and groomer before mounting.','Front-left / rear-left: move spin drive to reel-motor side, set to reverse.','Lower grinding stone to clear front roller.']
+  },
+  {
+    id:2, machine:'Toro Reelmaster 5410', unitType:'8-blade reel',
+    grinder:'Bernhard Express Dual 2000', status:'verified', lastVerified:'Jun 10, 2026', uses:2,
+    supportBar:'30°', rpm:'225 rpm', traverse:'12.5 ft/min', spinWheel:'.850" · 60g', reliefWheel:'.525" · 46g',
+    drive:'Standard / Forward',
+    notes:['Bedknife JRM 4BT243207.','Top-face 5°, front-face 6°.']
+  },
+  {
+    id:3, machine:'Toro Greensmaster 3120', unitType:'14-blade reel',
+    grinder:'Bernhard Express Dual 2000', status:'shop_tested', lastVerified:'May 2, 2026', uses:1,
+    supportBar:'43°', rpm:'200 rpm', traverse:'9 ft/min', spinWheel:'.850" · 60g', reliefWheel:'.525" · 46g',
+    drive:'Standard / Forward',
+    notes:['200 RPM produced the preferred smooth grind sound vs. a slightly choppy sound at 180 RPM.']
+  }
+];
+var currentRecipeId = null;
+var nextRecipeId = 4;
+
+var statusLabels = {
+  verified:{label:'✓ Verified', cls:'verified'},
+  shop_tested:{label:'Shop-tested', cls:'shoptested'},
+  suggested:{label:'Suggested', cls:'neutral'},
+  manufacturer_spec:{label:'Mfr Spec', cls:'neutral'}
+};
+
+function renderRecipeList(){
+  var container = document.getElementById('recipeListItems');
+  container.innerHTML = '';
+  recipes.forEach(function(r){
+    var s = statusLabels[r.status];
+    var row = document.createElement('div');
+    row.className = 'list-row';
+    row.onclick = function(){ openRecipe(r.id); };
+    row.innerHTML = '<div><div class="lr-title">'+r.machine+'</div>'+
+      '<div class="lr-sub">'+r.unitType+' · Updated '+r.lastVerified+'</div></div>'+
+      '<span class="badge '+s.cls+'" style="flex-shrink:0;margin-left:8px;">'+s.label+'</span>';
+    container.appendChild(row);
+  });
+}
+
+function openRecipe(id){
+  currentRecipeId = id;
+  renderRecipeDetail();
+  nav('recipedetail');
+}
+
+function renderRecipeDetail(){
+  var r = recipes.find(function(x){ return x.id === currentRecipeId; });
+  if(!r) return;
+  var s = statusLabels[r.status];
+  document.getElementById('rd-titlebar').textContent = r.machine;
+  document.getElementById('rd-breadcrumb').textContent = r.unitType;
+  document.getElementById('rd-head').textContent = r.machine;
+  document.getElementById('rd-sub').textContent = r.unitType;
+  document.getElementById('rd-badge').textContent = s.label;
+  document.getElementById('rd-badge').className = 'badge '+s.cls;
+  document.getElementById('rd-lastverified').textContent = 'Updated '+r.lastVerified;
+  document.getElementById('rd-supportbar').textContent = r.supportBar;
+  document.getElementById('rd-rpm').textContent = r.rpm;
+  document.getElementById('rd-traverse').textContent = r.traverse;
+  document.getElementById('rd-spinwheel').textContent = r.spinWheel;
+  document.getElementById('rd-reliefwheel').textContent = r.reliefWheel;
+  document.getElementById('rd-drive').textContent = r.drive;
+  document.getElementById('rd-grinder').textContent = r.grinder;
+  document.getElementById('rd-usecount').textContent = r.uses;
+  var notesEl = document.getElementById('rd-notes');
+  notesEl.innerHTML = '';
+  r.notes.forEach(function(n){
+    var li = document.createElement('li');
+    li.textContent = n;
+    notesEl.appendChild(li);
+  });
+  var promoteBtn = document.getElementById('rd-promote-btn');
+  if(r.status === 'verified'){
+    promoteBtn.style.display = 'none';
+  } else {
+    promoteBtn.style.display = 'flex';
+    promoteBtn.textContent = 'Promote to Verified';
+  }
+}
+
+function promoteRecipe(){
+  var r = recipes.find(function(x){ return x.id === currentRecipeId; });
+  if(!r) return;
+  r.status = 'verified';
+  r.lastVerified = 'Today';
+  renderRecipeDetail();
+  renderRecipeList();
+}
+
+function appendRecipe(){
+  var machine = document.getElementById('rf-machine').value || 'Unknown machine';
+  var unitType = document.getElementById('rf-unittype').value || 'Unspecified unit type';
+  var grinder = document.getElementById('rf-grinder').value || '—';
+  var supportBar = document.getElementById('rf-supportbar').value || '—';
+  var rpm = document.getElementById('rf-rpm').value || '—';
+  var traverse = document.getElementById('rf-traverse').value || '—';
+  var drive = document.getElementById('rf-drive').value || '—';
+  var spinWheel = document.getElementById('rf-spinwheel').value || '—';
+  var reliefWheel = document.getElementById('rf-reliefwheel').value || '—';
+  var notesRaw = document.getElementById('rf-notes').value || '';
+  var statusEl = document.querySelector('[data-screen="addrecipe"] .option-card.selected');
+  var status = statusEl ? statusEl.getAttribute('data-status') : 'suggested';
+
+  var newRecipe = {
+    id: nextRecipeId++, machine:machine, unitType:unitType, grinder:grinder,
+    status:status, lastVerified:'Today', uses:0,
+    supportBar:supportBar, rpm:rpm, traverse:traverse, spinWheel:spinWheel, reliefWheel:reliefWheel,
+    drive:drive, notes: notesRaw ? [notesRaw] : []
+  };
+  recipes.push(newRecipe);
+  renderRecipeList();
+  openRecipe(newRecipe.id);
+}
+
+// ---- bedknife tracking data model (demo: Front Left position on 3550-D) ----
+var bedknives = [
+  {id:1, manufacturer:'Toro', partNumber:'104-4009-02', material:'High-carbon steel', topFace:'5°', frontFace:'6°', minThickness:'.175 in', condition:'New', installDate:'Feb 3, 2026', removalDate:'Jul 22, 2026', grindCycles:9},
+  {id:2, manufacturer:'Toro', partNumber:'104-4009-03', material:'High-carbon steel', topFace:'5°', frontFace:'6°', minThickness:'.175 in', condition:'New', installDate:'Jul 22, 2026', removalDate:null, grindCycles:3}
+];
+var nextBedknifeId = 3;
+
+function renderBedknifeCurrent(){
+  var current = bedknives.find(function(b){ return b.removalDate === null; });
+  if(!current) return;
+  document.getElementById('bk-partnum').textContent = current.partNumber;
+  document.getElementById('bk-cycles').textContent = current.grindCycles;
+  document.getElementById('bk-installdate').textContent = current.installDate;
+}
+
+function renderBedknifeHistory(){
+  var list = document.getElementById('bedknifeHistoryList');
+  list.innerHTML = '';
+  var sorted = bedknives.slice().sort(function(a,b){ return b.id - a.id; });
+  sorted.forEach(function(b){
+    var isCurrent = b.removalDate === null;
+    var row = document.createElement('div');
+    row.className = 'summary-card';
+    row.innerHTML =
+      '<div class="sc-head">'+b.partNumber+(isCurrent ? ' <span class="badge verified" style="text-transform:none;">Current</span>' : '')+'</div>'+
+      '<div class="summary-row"><span class="k">Material</span><span class="v">'+b.material+'</span></div>'+
+      '<div class="summary-row"><span class="k">Top / front face</span><span class="v">'+b.topFace+' / '+b.frontFace+'</span></div>'+
+      '<div class="summary-row"><span class="k">Condition at install</span><span class="v">'+b.condition+'</span></div>'+
+      '<div class="summary-row"><span class="k">Installed</span><span class="v">'+b.installDate+'</span></div>'+
+      '<div class="summary-row"><span class="k">Removed</span><span class="v">'+(b.removalDate || '—')+'</span></div>'+
+      '<div class="summary-row"><span class="k">Grind cycles</span><span class="v">'+b.grindCycles+'</span></div>';
+    list.appendChild(row);
+  });
+}
+
+function saveBedknifeReplacement(){
+  var current = bedknives.find(function(b){ return b.removalDate === null; });
+  if(current) current.removalDate = 'Today';
+
+  var conditionEl = document.querySelector('[data-screen="replacebedknife"] .toggle-pair .option-card.selected');
+  var condition = conditionEl ? conditionEl.getAttribute('data-condition') : 'New';
+
+  var newBedknife = {
+    id: nextBedknifeId++,
+    manufacturer: document.getElementById('bk-manufacturer').value || '—',
+    partNumber: document.getElementById('bk-partnumber').value || '—',
+    material: document.getElementById('bk-material').value || '—',
+    topFace: document.getElementById('bk-topface').value || '—',
+    frontFace: document.getElementById('bk-frontface').value || '—',
+    minThickness: document.getElementById('bk-minthick').value || '—',
+    condition: condition,
+    installDate: 'Today',
+    removalDate: null,
+    grindCycles: 0
+  };
+  bedknives.push(newBedknife);
+  renderBedknifeCurrent();
+  renderBedknifeHistory();
+  nav('bedknifehistory');
 }
 
 function appendGrinder(){
@@ -1659,6 +2092,8 @@ function adjustVal(btn,delta){
 }
 
 renderMachineList();
+renderRecipeList();
+renderBedknifeCurrent();
 </script>
 
 </body>
